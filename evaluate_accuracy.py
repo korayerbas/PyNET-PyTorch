@@ -13,8 +13,10 @@ np.random.seed(0)
 torch.manual_seed(0)
 
 # Path to the dataset:
-dataset_dir = 'raw_images/'
-TEST_SIZE = 1204
+#dataset_dir = 'raw_images/'
+dataset_dir = "/content/gdrive/MyDrive/ColabNotebooks/pynet_fullres/dataset"
+
+TEST_SIZE = 40
 
 
 def evaluate_accuracy():
@@ -34,7 +36,8 @@ def evaluate_accuracy():
 
     model = PyNET(level=0, instance_norm=True, instance_norm_level_1=True).to(device)
     model = torch.nn.DataParallel(model)
-    model.load_state_dict(torch.load("models/original/pynet_level_0.pth"), strict=True)
+    model.load_state_dict(torch.load("/content/gdrive/MyDrive/ColabNotebooks/PYNET/models/original/pynet_level_0.pth"), strict=True)
+    #model.load_state_dict(torch.load("/content/gdrive/MyDrive/ColabNotebooks/pynet_fullres/model/pynet_level_0_epoch_57.pth"), strict=True)
 
     # Define the losses
 
@@ -72,4 +75,3 @@ def evaluate_accuracy():
 
 if __name__ == '__main__':
     evaluate_accuracy()
-
