@@ -15,6 +15,7 @@ from msssim import MSSSIM
 from model import PyNET
 from vgg import vgg_19
 from utils import normalize_batch, process_command_args
+from RGBuvHistBlock import RGBuvHistBlock
 
 to_image = transforms.Compose([transforms.ToPILImage()])
 
@@ -74,7 +75,24 @@ def train_model():
     VGG_19 = vgg_19(device)
     MSE_loss = torch.nn.MSELoss()
     MS_SSIM = MSSSIM()
+    #Histogram Loss
+    intensity_scale = True
+    histogram_size = 64
+    max_input_size = 256
+    hist_boundary = [-3, 3]           
+    method = 'inverse-quadratic' #options:'thresholding','RBF','inverse-quadratic'
 
+    # create a histogram block
+    histogram_block = RGBuvHistBlock(insz=max_input_size, h=histogram_size, 
+                                 intensity_scale=intensity_scale, 
+                                 method=method, hist_boundary=hist_boundary,
+                                 device=device)
+            
+    enhanced_hist = histogram_block(enhanced);# print('enhanced_hist shape: ',enhanced_hist.shape)
+    y_hist = histogram_block(y)
+
+    histogram_loss = (1/np.sqrt(2.0) * (torch.sqrt(torch.sum(torch.pow(torch.sqrt(y_hist) - torch.sqrt(enhanced_hist), 2)))) / enhanced_hist.shape[0])
+    
     # Train the network
 
     for epoch in range(num_train_epochs):
