@@ -75,7 +75,10 @@ def train_model():
     VGG_19 = vgg_19(device)
     MSE_loss = torch.nn.MSELoss()
     MS_SSIM = MSSSIM()
+    loss_L1 = torch.nn.L1Loss()
+    
     #Histogram Loss
+    
     intensity_scale = True
     histogram_size = 64
     max_input_size = 256
@@ -112,7 +115,8 @@ def train_model():
 
             # MSE Loss
             loss_mse = MSE_loss(enhanced, y)
-
+            L1_loss = loss_L1(enhanced, y)
+            
             # VGG Loss
 
             if level < 5:
@@ -125,7 +129,9 @@ def train_model():
             if level == 5 or level == 4:
                 total_loss = loss_mse
             if level == 3 or level == 2:
-                total_loss = loss_mse * 10 + loss_content
+                #total_loss = loss_mse * 10 + loss_content
+                total_loss =  L1_loss * 5 + loss_content + 5 * 
+                
             if level == 1:
                 total_loss = loss_mse * 10 + loss_content
             if level == 0:
