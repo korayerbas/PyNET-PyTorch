@@ -25,7 +25,7 @@ def extract_bayer_channels(raw):
 
     RAW_combined = np.dstack((ch_B, ch_Gb, ch_R, ch_Gr))
     RAW_norm = RAW_combined.astype(np.float32) / (4 * 255)
-    print(RAW_norm.shape)
+    #print(RAW_norm.shape)
     
     return RAW_norm
 
@@ -75,7 +75,7 @@ class LoadVisualData(Dataset):
     def __init__(self, data_dir, size, scale, level, full_resolution=True):
         self.raw_dir = os.path.join(data_dir,'test','full_resolution')
         #self.raw_dir = data_dir
-        print("raw_dir: ",self.raw_dir)
+        #print("raw_dir: ",self.raw_dir)
 
         self.dataset_size = size
         self.scale = scale
@@ -97,7 +97,7 @@ class LoadVisualData(Dataset):
         return self.dataset_size
 
     def __getitem__(self, idx):
-        print('idx: ', idx) #self control
+        #print('idx: ', idx) #self control
         raw_image = np.asarray(imageio.imread(os.path.join(self.raw_dir, self.test_images[idx])))
         raw_image = extract_bayer_channels(raw_image)
 
