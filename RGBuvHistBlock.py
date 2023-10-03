@@ -28,7 +28,7 @@ class RGBuvHistBlock(nn.Module):
  #     and can be easily integrated with the loss function. As mentioned in the
  #     paper, the 'inverse-quadratic' was found more stable than 'RBF' in our 
  #     training.
-    """
+                 
     super(RGBuvHistBlock, self).__init__()
     self.h = h
     self.insz = insz
