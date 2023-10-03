@@ -81,16 +81,10 @@ def train_model():
     
     intensity_scale = True
     histogram_size = 64
-    max_input_size = 256
+    max_input_size = 224
     hist_boundary = [-3, 3]           
     method = 'inverse-quadratic' #options:'thresholding','RBF','inverse-quadratic'
-
-    # create a histogram block
-    histogram_block = RGBuvHistBlock(insz=max_input_size, h=histogram_size, 
-                                 intensity_scale=intensity_scale, 
-                                 method=method, hist_boundary=hist_boundary,
-                                 device=device)
-            
+ 
     # Train the network
 
     for epoch in range(num_train_epochs):
@@ -121,22 +115,26 @@ def train_model():
             
             # histogram loss
 
-            enhanced_hist = histogram_block(enhanced);# print('enhanced_hist shape: ',enhanced_hist.shape)
-            y_hist = histogram_block(y)
+            if level == 2:
+                histogram_block = RGBuvHistBlock(insz=max_input_size, h=histogram_size, 
+                                 intensity_scale=intensity_scale, 
+                                 method=method,
+                                 device=device)       
+                enhanced_hist = histogram_block(enhanced);# print('enhanced_hist shape: ',enhanced_hist.shape)
+                y_hist = histogram_block(y)
 
-            histogram_loss = (1/np.sqrt(2.0) * (torch.sqrt(torch.sum(torch.pow(torch.sqrt(y_hist) - torch.sqrt(enhanced_hist), 2)))) / enhanced_hist.shape[0])
-                
+                histogram_loss = (1/np.sqrt(2.0) * (torch.sqrt(torch.sum(torch.pow(torch.sqrt(target_hist) - torch.sqrt(input_hist), 2))))/input_hist.shape[0])                
+            
             # Total Loss
 
             if level == 5 or level == 4:
                 total_loss = loss_mse
-            if level == 3 or level == 2:
-                #total_loss = loss_mse * 10 + loss_content
+            if level == 3:
+                total_loss = loss_mse * 10 + loss_content
+            if level == 2:
                 total_loss =  L1_loss * 5 + loss_content + 5 * histogram_loss
-                
             if level == 1:
-                #total_loss = loss_mse * 10 + loss_content
-                total_loss = 2*L1_loss + 2*loss_content + histogram_loss
+                total_loss = loss_mse * 10 + loss_content
             if level == 0:
                 loss_ssim = MS_SSIM(enhanced, y)
                 total_loss = loss_mse + loss_content + (1 - loss_ssim) * 0.4
@@ -200,10 +198,11 @@ def train_model():
                         loss_L1_eval += loss_L1_temp
                         loss_psnr_eval += 20 * math.log10(1.0 / math.sqrt(loss_mse_temp))
 
-                        enhanced_hist = histogram_block(enhanced)
-                        y_hist = histogram_block(y)
-                        loss_histogram_temp = (1/np.sqrt(2.0) * (torch.sqrt(torch.sum(torch.pow(torch.sqrt(y_hist) - torch.sqrt(enhanced_hist), 2)))) / enhanced_hist.shape[0]) 
-                        loss_histogram_eval += loss_histogram_temp
+                        if level == 2:
+                            enhanced_hist = histogram_block(enhanced)
+                            y_hist = histogram_block(y)
+                            loss_histogram_temp = (1/np.sqrt(2.0) * (torch.sqrt(torch.sum(torch.pow(torch.sqrt(y_hist) - torch.sqrt(enhanced_hist), 2)))) / enhanced_hist.shape[0]) 
+                            loss_histogram_eval += loss_histogram_temp
 
                         if level < 2:
                             loss_ssim_eval += MS_SSIM(y, enhanced)
@@ -221,11 +220,14 @@ def train_model():
                 loss_histogram_eval =  loss_histogram_eval / TEST_SIZE
                 
                 if level < 2:
-                    print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f, hist_loss: %.4f" % (epoch,
-                            loss_mse_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval, loss_histogram_eval))
+                    print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f" % (epoch,
+                            loss_mse_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval))
                 elif level < 5:
-                    print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f, hist_loss: %.4f" % (epoch,
-                            loss_mse_eval, loss_psnr_eval, loss_vgg_eval, loss_histogram_eval))
+                    print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f" % (epoch,
+                            loss_mse_eval, loss_psnr_eval, loss_vgg_eval))
+                elif level ==2:
+                    print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f" % (epoch,
+                            loss_mse_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval))
                 else:
                     print("Epoch %d, mse: %.4f, psnr: %.4f" % (epoch, loss_mse_eval, loss_psnr_eval))
 
