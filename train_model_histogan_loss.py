@@ -226,8 +226,8 @@ def train_model():
                     print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f" % (epoch,
                             loss_mse_eval, loss_psnr_eval, loss_vgg_eval))
                 elif level ==2:
-                    print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f" % (epoch,
-                            loss_mse_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval))
+                    print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f, hist_loss: %.4f" % (epoch,
+                            loss_mse_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval, loss_histogram_eval))
                 else:
                     print("Epoch %d, mse: %.4f, psnr: %.4f" % (epoch, loss_mse_eval, loss_psnr_eval))
 
