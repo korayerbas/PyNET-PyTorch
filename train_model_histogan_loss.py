@@ -76,15 +76,7 @@ def train_model():
     MSE_loss = torch.nn.MSELoss()
     MS_SSIM = MSSSIM()
     loss_L1 = torch.nn.L1Loss()
-    
-    #Histogram Loss
-    
-    intensity_scale = True
-    histogram_size = 64
-    max_input_size = 224
-    hist_boundary = [-3, 3]           
-    method = 'inverse-quadratic' #options:'thresholding','RBF','inverse-quadratic'
- 
+     
     # Train the network
 
     for epoch in range(num_train_epochs):
@@ -114,8 +106,14 @@ def train_model():
                 loss_content = MSE_loss(enhanced_vgg, target_vgg)
             
             # histogram loss
-
+            
             if level == 2:
+                #Histogram Loss
+                intensity_scale = True
+                histogram_size = 32
+                max_input_size = 150
+                hist_boundary = [-2, 2]           
+                method = 'inverse-quadratic' #options:'thresholding','RBF','inverse-quadratic'
                 histogram_block = RGBuvHistBlock(insz=max_input_size, h=histogram_size, 
                                  intensity_scale=intensity_scale, 
                                  method=method,
