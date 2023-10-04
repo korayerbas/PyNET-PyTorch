@@ -1,5 +1,12 @@
 
 ##### Copyright 2021 Mahmoud Afifi.######
+import torch
+import torch.nn as nn
+from PIL import Image
+import matplotlib.pyplot as plt
+import torch.nn.functional as F
+import torchvision.transforms as transforms
+import numpy as np
 
 EPS = 1e-6
 class RGBuvHistBlock(nn.Module):
