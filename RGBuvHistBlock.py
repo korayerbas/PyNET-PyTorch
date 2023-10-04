@@ -5,7 +5,7 @@ EPS = 1e-6
 class RGBuvHistBlock(nn.Module):
   def __init__(self, h, insz, resizing='interpolation',
                method='inverse-quadratic', sigma=0.02, intensity_scale=True,
-               device='cuda')
+               device='cuda'):
  # """ Computes the RGB-uv histogram feature of a given image.
  #   Args:
  #     h: histogram dimension size (scalar). The default value is 64.
