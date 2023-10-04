@@ -121,7 +121,7 @@ def train_model():
                 enhanced_hist = histogram_block(enhanced);# print('enhanced_hist shape: ',enhanced_hist.shape)
                 y_hist = histogram_block(y)
 
-                histogram_loss = (1/np.sqrt(2.0) * (torch.sqrt(torch.sum(torch.pow(torch.sqrt(target_hist) - torch.sqrt(input_hist), 2))))/input_hist.shape[0])                
+                histogram_loss = (1/np.sqrt(2.0) * (torch.sqrt(torch.sum(torch.pow(torch.sqrt(y_hist) - torch.sqrt(enhanced_hist), 2))))/enhanced_hist.shape[0])                
             
             # Total Loss
 
