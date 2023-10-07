@@ -51,7 +51,7 @@ class LoadData(Dataset):
 
     def __getitem__(self, idx):
 
-        raw_image = np.asarray(imageio.imread(os.path.join(self.raw_dir, str(idx)+ ".png"))) 
+        raw_image = np.asarray(imageio.v2.imread(os.path.join(self.raw_dir, str(idx)+ ".png"))) 
         raw_image = extract_bayer_channels(raw_image)
         raw_image = torch.from_numpy(raw_image.transpose((2, 0, 1)))
         
@@ -98,7 +98,7 @@ class LoadVisualData(Dataset):
 
     def __getitem__(self, idx):
         #print('idx: ', idx) #self control
-        raw_image = np.asarray(imageio.imread(os.path.join(self.raw_dir, self.test_images[idx])))
+        raw_image = np.asarray(imageio.v2.imread(os.path.join(self.raw_dir, self.test_images[idx])))
         raw_image = extract_bayer_channels(raw_image)
 
         if self.level > 1 or self.full_resolution:
