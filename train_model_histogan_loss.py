@@ -53,7 +53,7 @@ def train_model():
                              pin_memory=True, drop_last=False)
 
     visual_dataset = LoadVisualData(dataset_dir, 3, dslr_scale, level)
-    visual_loader = DataLoader(dataset=visual_dataset, batch_size=1, shuffle=False, num_workers=0,
+    visual_loader = DataLoader(dataset=visual_dataset, batch_size=1, shuffle=False, num_workers=1,
                                pin_memory=True, drop_last=False)
 
     # Creating image processing network and optimizer
@@ -68,7 +68,7 @@ def train_model():
     if level < 5:
         #generator.load_state_dict(torch.load("models/pynet_level_" + str(level + 1) +
         #                                     "owntrain_epoch_" + str(restore_epoch) + ".pth"), strict=False)
-        generator.load_state_dict(torch.load("/content/gdrive/MyDrive/ColabNotebooks/pynet_fullres/model/histogram_loss/pynet_hist_level_" + str(level+1) +
+        generator.load_state_dict(torch.load("/content/gdrive/MyDrive/ColabNotebooks/pynet_fullres/model/histogram_loss/pynet_hist_level_" + str(level) +
                                              "_epoch_" + str(restore_epoch) + ".pth"), strict=False) # "level+1" changed to level
     # Losses
 
@@ -136,7 +136,7 @@ def train_model():
             if level == 0:
                 loss_ssim = MS_SSIM(enhanced, y)
                 total_loss = loss_mse + loss_content + (1 - loss_ssim) * 0.4
-
+            #print('total loss: ', total_loss)
             # Perform the optimization step
 
             total_loss.backward()
@@ -220,12 +220,12 @@ def train_model():
                 if level < 2:
                     print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f" % (epoch,
                             loss_mse_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval))
-                elif level < 5:
-                    print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f" % (epoch,
-                            loss_mse_eval, loss_psnr_eval, loss_vgg_eval))
                 elif level ==2:
                     print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f, hist_loss: %.4f" % (epoch,
                             loss_mse_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval, loss_histogram_eval))
+                elif level < 5:
+                    print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f" % (epoch,
+                            loss_mse_eval, loss_psnr_eval, loss_vgg_eval))
                 else:
                     print("Epoch %d, mse: %.4f, psnr: %.4f" % (epoch, loss_mse_eval, loss_psnr_eval))
 
