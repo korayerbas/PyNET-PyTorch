@@ -12,9 +12,10 @@ import sys
 
 from load_data import LoadData, LoadVisualData
 from msssim import MSSSIM
-from model import PyNET
+from model_lightweight import PyNET
 from vgg import vgg_19
 from utils import normalize_batch, process_command_args
+from RGBuvHistBlock import RGBuvHistBlock
 
 to_image = transforms.Compose([transforms.ToPILImage()])
 
@@ -52,7 +53,7 @@ def train_model():
                              pin_memory=True, drop_last=False)
 
     visual_dataset = LoadVisualData(dataset_dir, 3, dslr_scale, level)
-    visual_loader = DataLoader(dataset=visual_dataset, batch_size=1, shuffle=False, num_workers=0,
+    visual_loader = DataLoader(dataset=visual_dataset, batch_size=1, shuffle=False, num_workers=1,
                                pin_memory=True, drop_last=False)
 
     # Creating image processing network and optimizer
@@ -100,9 +101,24 @@ def train_model():
             enhanced_vgg = VGG_19(normalize_batch(enhanced))
             target_vgg = VGG_19(normalize_batch(y))
             loss_content = MSE_loss(enhanced_vgg, target_vgg)
+            
+            #Histogram Loss
+            if level == 2:
+                intensity_scale = True
+                histogram_size = 32
+                max_input_size = 150
+                hist_boundary = [-2, 2]           
+                method = 'inverse-quadratic' #options:'thresholding','RBF','inverse-quadratic'
+                histogram_block = RGBuvHistBlock(insz=max_input_size, h=histogram_size, 
+                                 intensity_scale=intensity_scale, 
+                                 method=method,
+                                 device=device)       
+                enhanced_hist = histogram_block(enhanced);# print('enhanced_hist shape: ',enhanced_hist.shape)
+                y_hist = histogram_block(y)
 
+                histogram_loss = (1/np.sqrt(2.0) * (torch.sqrt(torch.sum(torch.pow(torch.sqrt(y_hist) - torch.sqrt(enhanced_hist), 2))))/enhanced_hist.shape[0])  
             # Total Loss
-
+                
             if level == 4:
                 total_loss = loss_content
             if level == 3 or level == 2:
