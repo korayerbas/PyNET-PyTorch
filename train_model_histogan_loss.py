@@ -216,18 +216,19 @@ def train_model():
                 loss_vgg_eval = loss_vgg_eval / TEST_SIZE
                 loss_ssim_eval = loss_ssim_eval / TEST_SIZE
                 loss_histogram_eval =  loss_histogram_eval / TEST_SIZE
+                loss_L1_eval = loss_L1_eval / TEST_SIZE
                 
                 if level < 2:
-                    print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f" % (epoch,
-                            loss_mse_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval))
+                    print("Epoch %d, mse: %.4f, L1_loss: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f" % (epoch,
+                            loss_mse_eval, loss_L1_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval))
                 elif level ==2:
-                    print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f, hist_loss: %.4f" % (epoch,
-                            loss_mse_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval, loss_histogram_eval))
+                    print("Epoch %d, mse: %.4f, L1_loss: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f, hist_loss: %.4f" % (epoch,
+                            loss_mse_eval, loss_L1_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval, loss_histogram_eval))
                 elif level < 5:
-                    print("Epoch %d, mse: %.4f, psnr: %.4f, vgg: %.4f" % (epoch,
-                            loss_mse_eval, loss_psnr_eval, loss_vgg_eval))
+                    print("Epoch %d, mse: %.4f, L1_loss: %.4f, psnr: %.4f, vgg: %.4f" % (epoch,
+                            loss_mse_eval, loss_L1_eval,  loss_psnr_eval, loss_vgg_eval))
                 else:
-                    print("Epoch %d, mse: %.4f, psnr: %.4f" % (epoch, loss_mse_eval, loss_psnr_eval))
+                    print("Epoch %d, mse: %.4f,  L1_loss: %.4f, psnr: %.4f" % (epoch, loss_mse_eval, loss_L1_eval, loss_psnr_eval))
 
                 generator.train()
 
