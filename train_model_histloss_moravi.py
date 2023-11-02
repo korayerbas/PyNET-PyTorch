@@ -12,10 +12,11 @@ import sys
 
 from load_data import LoadData, LoadVisualData
 from msssim import MSSSIM
-from model import PyNET
+from model_lightweight import PyNET
 from vgg import vgg_19
 from utils import normalize_batch, process_command_args
 from RGBuvHistBlock import RGBuvHistBlock
+from hist_loss_moravi import SingleDimHistLayer, JointHistLayer, MutualInformationLoss,EarthMoversDistanceLoss
 
 to_image = transforms.Compose([transforms.ToPILImage()])
 
@@ -51,7 +52,7 @@ def train_model():
     test_loader = DataLoader(dataset=test_dataset, batch_size=1, shuffle=False, num_workers=1,
                              pin_memory=True, drop_last=False)
 
-    visual_dataset = LoadVisualData(dataset_dir, 3, dslr_scale, level)
+    visual_dataset = LoadVisualData(dataset_dir, 8, dslr_scale, level)
     visual_loader = DataLoader(dataset=visual_dataset, batch_size=1, shuffle=False, num_workers=1,
                                pin_memory=True, drop_last=False)
 
@@ -67,7 +68,7 @@ def train_model():
     if level < 5:
         #generator.load_state_dict(torch.load("models/pynet_level_" + str(level + 1) +
         #                                     "owntrain_epoch_" + str(restore_epoch) + ".pth"), strict=False)
-        generator.load_state_dict(torch.load("/content/gdrive/MyDrive/ColabNotebooks/pynet_fullres/model/histogram_loss/pynet_hist_level_" + str(level) +
+        generator.load_state_dict(torch.load("/content/PyNET-PyTorch/models/pynet_hist_level_" + str(level+1) +
                                              "_epoch_" + str(restore_epoch) + ".pth"), strict=False) # "level+1" changed to level
     # Losses
 
@@ -114,12 +115,12 @@ def train_model():
                 emd_lossR = EarthMoversDistanceLoss()(enhanced_histR, y_histR); emd_lossG = EarthMoversDistanceLoss()(enhanced_histG, y_histG);  emd_lossB = EarthMoversDistanceLoss()(enhanced_histB, y_histB)
                 emd_loss = (emd_lossR + emd_lossG + emd_lossB) /3
 
-                joint_histR = JointHistLayer()(enhanced[:, 0], y[:, 0]);  joint_histG = JointHistLayer()(enhanced[:, 1], y[:, 1]);  joint_histG = JointHistLayer()(enhanced[:, 2], y[:, 2])
+                joint_histR = JointHistLayer()(enhanced[:, 0], y[:, 0]);  joint_histG = JointHistLayer()(enhanced[:, 1], y[:, 1]);  joint_histB = JointHistLayer()(enhanced[:, 2], y[:, 2])
                                 
-                enhanced_miR = MutualInformationLoss()(enhanced_histR, y_histR, joint_histR));  enhanced_miG = MutualInformationLoss()(enhanced_histG, y_histG, joint_histG));
-                enhanced_miB = MutualInformationLoss()(enhanced_histB, y_histB, joint_histB))
+                miR_loss = MutualInformationLoss()(enhanced_histR, y_histR, joint_histR);  miG_loss = MutualInformationLoss()(enhanced_histG, y_histG, joint_histG);
+                miB_loss = MutualInformationLoss()(enhanced_histB, y_histB, joint_histB);
 
-                mi_loss = (enhanced_miR + enhanced_miG + enhanced_miB) /3
+                mi_loss = (miR_loss + miG_loss + miB_loss) /3
             
             # Total Loss
 
@@ -145,7 +146,7 @@ def train_model():
                 # Save the model that corresponds to the current epoch
 
                 generator.eval().cpu()
-                torch.save(generator.state_dict(), "/content/gdrive/MyDrive/ColabNotebooks/pynet_fullres/model/histogram_loss/pynet_hist_level_" + str(level) + "_epoch_" + str(epoch) + ".pth")
+                torch.save(generator.state_dict(), "/content/gdrive/MyDrive/ColabNotebooks/pynet_fullres/model/moravi/pynet_hist_level_" + str(level) + "_epoch_" + str(epoch) + ".pth")
                 generator.to(device).train()
 
                 # Save visual results for several test images
@@ -164,7 +165,7 @@ def train_model():
                         enhanced = generator(raw_image.detach())
                         enhanced = np.asarray(to_image(torch.squeeze(enhanced.detach().cpu())))
 
-                        imageio.imwrite("/content/gdrive/MyDrive/ColabNotebooks/pynet_fullres/results/histogram_loss/pynet_hist_img_" + str(j) + "_level_" + str(level) + "_epoch_" +
+                        imageio.imwrite("/content/gdrive/MyDrive/ColabNotebooks/pynet_fullres/results/moravi/pynet_hist_img_" + str(j) + "_level_" + str(level) + "_epoch_" +
                                         str(epoch) + ".jpg", enhanced)
 
                 # Evaluate the model
@@ -198,25 +199,22 @@ def train_model():
 
                         joint_histR = JointHistLayer()(enhanced[:, 0], y[:, 0]);  joint_histG = JointHistLayer()(enhanced[:, 1], y[:, 1]);  joint_histG = JointHistLayer()(enhanced[:, 2], y[:, 2])
                                 
-                        enhanced_miR = MutualInformationLoss()(enhanced_histR, y_histR, joint_histR));  enhanced_miG = MutualInformationLoss()(enhanced_histG, y_histG, joint_histG));
-                        enhanced_miB_temp = MutualInformationLoss()(enhanced_histB, y_histB, joint_histB))
+                        miR_loss = MutualInformationLoss()(enhanced_histR, y_histR, joint_histR);  miG_loss = MutualInformationLoss()(enhanced_histG, y_histG, joint_histG);
+                        miB_loss = MutualInformationLoss()(enhanced_histB, y_histB, joint_histB)
+                        mi_loss_temp = (miR_loss + miG_loss + miB_loss) /3
 
                         loss_mse_eval += loss_mse_temp
                         loss_L1_eval += loss_L1_temp
                         loss_psnr_eval += 20 * math.log10(1.0 / math.sqrt(loss_mse_temp))
-                        loss_emd_eval += 
+                        loss_emd_eval += emd_loss_temp
+                        loss_mi_eval += mi_loss_temp
                         
+                        loss_ssim_eval += MS_SSIM(y, enhanced)
 
-                mi_loss = (enhanced_miR + enhanced_miG + enhanced_miB) /3
+                        enhanced_vgg_eval = VGG_19(normalize_batch(enhanced)).detach()
+                        target_vgg_eval = VGG_19(normalize_batch(y)).detach()
 
-                        if level < 2:
-                            loss_ssim_eval += MS_SSIM(y, enhanced)
-
-                        if level < 5:
-                            enhanced_vgg_eval = VGG_19(normalize_batch(enhanced)).detach()
-                            target_vgg_eval = VGG_19(normalize_batch(y)).detach()
-
-                            loss_vgg_eval += MSE_loss(enhanced_vgg_eval, target_vgg_eval).item()
+                        loss_vgg_eval += MSE_loss(enhanced_vgg_eval, target_vgg_eval).item()
 
                 loss_mse_eval = loss_mse_eval / TEST_SIZE
                 loss_psnr_eval = loss_psnr_eval / TEST_SIZE
@@ -224,21 +222,13 @@ def train_model():
                 loss_ssim_eval = loss_ssim_eval / TEST_SIZE
                 loss_histogram_eval =  loss_histogram_eval / TEST_SIZE
                 loss_L1_eval = loss_L1_eval / TEST_SIZE
+                loss_emd_eval = loss_emd_eval / TEST_SIZE
+                loss_mi_eval = loss_mi_eval / TEST_SIZE
                 
-                if level < 2:
-                    print("Epoch %d, mse: %.4f, L1_loss: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f" % (epoch,
-                            loss_mse_eval, loss_L1_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval))
-                elif level ==2:
-                    print("Epoch %d, mse: %.4f, L1_loss: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f, hist_loss: %.4f" % (epoch,
-                            loss_mse_eval, loss_L1_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval, loss_histogram_eval))
-                elif level < 5:
-                    print("Epoch %d, mse: %.4f, L1_loss: %.4f, psnr: %.4f, vgg: %.4f" % (epoch,
-                            loss_mse_eval, loss_L1_eval,  loss_psnr_eval, loss_vgg_eval))
-                else:
-                    print("Epoch %d, mse: %.4f,  L1_loss: %.4f, psnr: %.4f" % (epoch, loss_mse_eval, loss_L1_eval, loss_psnr_eval))
-
+                print("Epoch %d, mse: %.4f, L1_loss: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f, ms-ssim: %.4f, emd_loss: %.4f, mi_loss: %.4f" % (epoch,
+                            loss_mse_eval, loss_L1_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval, loss_ssim_eval, loss_emd_eval, loss_mi_eval))
+               
                 generator.train()
-
-
+                
 if __name__ == '__main__':
     train_model()
