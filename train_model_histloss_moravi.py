@@ -68,8 +68,8 @@ def train_model():
     if level < 5:
         #generator.load_state_dict(torch.load("models/pynet_level_" + str(level + 1) +
         #                                     "owntrain_epoch_" + str(restore_epoch) + ".pth"), strict=False)
-        generator.load_state_dict(torch.load("/content/PyNET-PyTorch/models/pynet_hist_level_" + str(level+1) +
-                                             "_epoch_" + str(restore_epoch) + ".pth"), strict=False) # "level+1" changed to level
+        generator.load_state_dict(torch.load("/content/PyNET-PyTorch/models/pynet_level_" + str(level+1) +
+                                             "_epoch_" + str(restore_epoch) + "_lght.pth"), strict=False) # "level+1" changed to level
     # Losses
 
     VGG_19 = vgg_19(device)
@@ -229,6 +229,7 @@ def train_model():
                             loss_mse_eval, loss_L1_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval, loss_ssim_eval, loss_emd_eval, loss_mi_eval))
                
                 generator.train()
-                
+
+
 if __name__ == '__main__':
     train_model()
