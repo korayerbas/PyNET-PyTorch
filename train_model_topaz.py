@@ -154,7 +154,7 @@ def train_model():
                 # Save the model that corresponds to the current epoch
 
                 generator.eval().cpu()
-                torch.save(generator.state_dict(), "/content/PyNET-PyTorch/models/pynet_hist_level_" + str(level) + "_epoch_" + str(epoch) + ".pth")
+                torch.save(generator.state_dict(), "/content/gdrive/MyDrive/ColabNotebooks/PYNET/models/pynet_topaz_level_" + str(level) + "_epoch_" + str(epoch) + ".pth")
                 generator.to(device).train()
 
                 # Save visual results for several test images
@@ -173,7 +173,7 @@ def train_model():
                         enhanced = generator(raw_image.detach())
                         enhanced = np.asarray(to_image(torch.squeeze(enhanced.detach().cpu())))
 
-                        imageio.imwrite("/content/PyNET-PyTorch/results/pynet_hist_img_" + str(j) + "_level_" + str(level) + "_epoch_" +
+                        imageio.imwrite("/content/gdrive/MyDrive/ColabNotebooks/PYNET/results/pynet_topaz_img_" + str(j) + "_level_" + str(level) + "_epoch_" +
                                         str(epoch) + ".jpg", enhanced)
 
                 # Evaluate the model
@@ -202,16 +202,18 @@ def train_model():
                         loss_mse_eval += loss_mse_temp
                         loss_L1_eval += loss_L1_temp
                         loss_psnr_eval += 20 * math.log10(1.0 / math.sqrt(loss_mse_temp))
+                        
+                        if level < 2:
+                            loss_ssim_eval += MS_SSIM(y, enhanced)
 
-                        loss_ssim_eval += MS_SSIM(y, enhanced)
+                        #enhanced_hist = histogram_block(enhanced)
+                        #y_hist = histogram_block(y)
+                        #loss_histogram_temp = (1/np.sqrt(2.0) * (torch.sqrt(torch.sum(torch.pow(torch.sqrt(y_hist) - torch.sqrt(enhanced_hist), 2)))) / enhanced_hist.shape[0]) 
+                        #loss_histogram_eval += loss_histogram_temp
 
-                        enhanced_hist = histogram_block(enhanced)
-                        y_hist = histogram_block(y)
-                        loss_histogram_temp = (1/np.sqrt(2.0) * (torch.sqrt(torch.sum(torch.pow(torch.sqrt(y_hist) - torch.sqrt(enhanced_hist), 2)))) / enhanced_hist.shape[0]) 
-                        loss_histogram_eval += loss_histogram_temp
-
-                        enhanced_vgg_eval = VGG_19(normalize_batch(enhanced)).detach()
-                        target_vgg_eval = VGG_19(normalize_batch(y)).detach()
+                        if level < 5:
+                            enhanced_vgg_eval = VGG_19(normalize_batch(enhanced)).detach()
+                            target_vgg_eval = VGG_19(normalize_batch(y)).detach()
 
                         loss_vgg_eval += MSE_loss(enhanced_vgg_eval, target_vgg_eval).item()
 
@@ -222,8 +224,14 @@ def train_model():
                 loss_histogram_eval =  loss_histogram_eval / TEST_SIZE
                 loss_L1_eval = loss_L1_eval / TEST_SIZE
 
-                print("Epoch %d, mse: %.4f, L1_loss: %.4f, psnr: %.4f, vgg: %.4f, hist_loss: %.4f, ms-ssim: %.4f" % (epoch,
-                            loss_mse_eval, loss_L1_eval, loss_psnr_eval, loss_vgg_eval, loss_histogram_eval, loss_ssim_eval))
+                if level < 2:
+                    print("Epoch %d, mse: %.4f, L1_loss: %.4f, psnr: %.4f, vgg: %.4f, ms-ssim: %.4f" % (epoch,
+                            loss_mse_eval, loss_L1_eval, loss_psnr_eval, loss_vgg_eval, loss_ssim_eval))
+                elif level < 5:
+                    print("Epoch %d, mse: %.4f,L1_loss: %.4f, psnr: %.4f, vgg: %.4f" % (epoch,
+                            loss_mse_eval, loss_L1_eval, loss_psnr_eval, loss_vgg_eval))
+                else:
+                    print("Epoch %d, mse: %.4f,L1_loss: %.4f, psnr: %.4f" % (epoch, loss_mse_eval, loss_L1_eval, loss_psnr_eval))
 
                 generator.train()
 
